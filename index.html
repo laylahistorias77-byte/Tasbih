@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tasbih Istighfar</title>
+    <script src="https://telegram.org"></script>
+    <style>
+        :root {
+            --bg-color: #0f2015;
+            --card-bg: #163020;
+            --primary: #c9a0dc; /* Toque rosa/oro suave solicitado */
+            --accent: #d4af37;  /* Oro islámico */
+            --text: #f0f4f1;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 90vh;
+            text-align: center;
+        }
+        .header {
+            margin-top: 10px;
+        }
+        .header h1 {
+            color: var(--accent);
+            font-size: 24px;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .arabic-text {
+            font-size: 28px;
+            color: var(--text);
+            margin: 10px 0;
+            font-family: 'Amiri', serif;
+        }
+        .tabs {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: 25px;
+            padding: 5px;
+            width: 90%;
+            max-width: 350px;
+            border: 1px solid var(--accent);
+        }
+        .tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text);
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 20px;
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            background-color: var(--accent);
+            color: var(--bg-color);
+        }
+        .view-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+        }
+        .view {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            align-items: center;
+        }
+        .view.active {
+            display: flex;
+        }
+        .counter-display {
+            font-size: 64px;
+            font-weight: bold;
+            color: var(--text);
+            margin: 20px 0;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        .main-clicker {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #20462f 0%, #163020 100%);
+            border: 5px solid var(--accent);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            color: var(--text);
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s, box-shadow 0.1s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .main-clicker:active {
+            transform: scale(0.95);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+            border-color: #fff;
+        }
+        .btn-action {
+            background-color: #1a3f2b;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 80%;
+            max-width: 300px;
+            transition: 0.2s;
+        }
+        .btn-action:active {
+            background-color: var(--accent);
+            color: var(--bg-color);
+        }
+        .challenge-box {
+            background-color: var(--card-bg);
+            border: 1px dashed var(--accent);
+            padding: 15px;
+            border-radius: 15px;
+            width: 85%;
+            max-width: 320px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Tasbih de Istighfar</h1>
+        <div class="arabic-text">أَسْتَغْفِرُ اللَّهَ</div>
+    </div>
+
+    <!-- Pestañas para cambiar de modo -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchView('individual')">🙋‍♂️ Individual</button>
+        <button class="tab-btn" onclick="switchView('grupal')">🕌 Reto Grupal</button>
+    </div>
+
+    <div class="view-container">
+        <!-- VISTA 1: CONTADOR INDIVIDUAL -->
+        <div id="view-individual" class="view active">
+            <div class="counter-display" id="ind-counter">0</div>
+            <button class="main-clicker" onclick="incrementIndividual()">
+                <span>📿</span>
+                <span style="margin-top:5px;">PULSAR</span>
+            </button>
+            <button class="btn-action" style="background:none; border:none; color:#777; font-size:12px;" onclick="resetIndividual()">Reiniciar cuenta propia</button>
+        </div>
+
+        <!-- VISTA 2: RETO EN GRUPO -->
+        <div id="view-grupal" class="view">
+            <div class="challenge-box">
+                <h3 style="color:var(--accent); margin:0 0 10px 0;">🎯 Reto de la Semana</h3>
+                <p style="margin:0; font-size:14px; line-height:1.4;">¡Logremos llegar juntos a 10,000 Istighfar antes del viernes! Suma tus clics aquí abajo y compártelos en el canal.</p>
+            </div>
+            <div class="counter-display" id="group-counter" style="color:var(--accent)">0</div>
+            <button class="main-clicker" onclick="incrementGroup()" style="border-color:var(--text);">
+                <span>👥</span>
+                <span style="margin-top:5px;">SUMAR AL RETO</span>
+            </button>
+            <button class="btn-action" onclick="shareGroupScore()">📤 Compartir mis puntos al canal</button>
+        </div>
+    </div>
+
+    <script>
+        // Inicializar la Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Abre la app a pantalla completa
+
+        // Cargar datos guardados en el móvil del usuario para que no se borren al cerrar
+        let indCount = localStorage.getItem('indCount') ? parseInt(localStorage.getItem('indCount')) : 0;
+        let groupCount = localStorage.getItem('groupCount') ? parseInt(localStorage.getItem('groupCount')) : 0;
+
+        document.getElementById('ind-counter').innerText = indCount;
+        document.getElementById('group-counter').innerText = groupCount;
+
+        function switchView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            if(viewName === 'individual') {
+                document.getElementById('view-individual').classList.add('active');
+                event.target.classList.add('active');
+            } else {
+                document.getElementById('view-grupal').classList.add('active');
+                event.target.classList.add('active');
+            }
+        }
+
+        function incrementIndividual() {
+            indCount++;
+            document.getElementById('ind-counter').innerText = indCount;
+            localStorage.setItem('indCount', indCount);
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium'); // Vibración suave al pulsar
+        }
+
+        function resetIndividual() {
+            if(confirm("¿Seguro que quieres poner a 0 tu contador individual?")) {
+                indCount = 0;
+                document.getElementById('ind-counter').innerText = indCount;
+                localStorage.setItem('indCount', indCount);
+            }
+        }
+
+        function incrementGroup() {
+            groupCount++;
+            document.getElementById('group-counter').innerText = groupCount;
+            localStorage.setItem('groupCount', groupCount);
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function shareGroupScore() {
+            // Envía un mensaje automático al chat de Telegram con los puntos aportados
+            const text = `🕌 ¡He aportado ${groupCount} Istighfar al Reto Semanal del Grupo! 📿`;
+            tg.sendData(text); // Esto cierra la app y manda los puntos en forma de mensaje
+        }
+    </script>
+</body>
+</html>
