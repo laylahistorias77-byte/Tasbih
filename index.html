@@ -1,9 +1,10 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tasbih con Regalo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tasbih</title>
+    <!-- Conexión oficial y actualizada de Telegram -->
     <script src="https://telegram.org"></script>
     <style>
         body { 
@@ -13,12 +14,13 @@
             text-align: center; 
             padding: 20px; 
             margin: 0;
+            user-select: none;
+            -webkit-user-select: none;
         }
         h1 { color: #d4af37; margin: 10px 0; font-size: 24px; }
         .arabic { font-size: 26px; color: #ffb7c5; margin-bottom: 20px; font-weight: bold; }
         .num { font-size: 80px; font-weight: bold; margin: 20px 0; color: #ffffff; }
         
-        /* Botón principal */
         .btn-main { 
             width: 180px; 
             height: 180px; 
@@ -30,25 +32,20 @@
             font-weight: bold; 
             cursor: pointer;
             box-shadow: 0 8px 15px rgba(0,0,0,0.5);
+            outline: none;
             -webkit-tap-highlight-color: transparent;
         }
         .btn-main:active { transform: scale(0.95); border-color: #ffb7c5; }
         
-        /* Carta del Regalo Sorpresa (Oculta al principio) */
         .regalo-box {
             display: none;
             margin-top: 30px;
-            background: radial-gradient(circle, #fff3cc 0%, #ffe699 100%);
+            background: #ffe699;
             border: 3px double #d4af37;
             border-radius: 15px;
             padding: 20px;
             color: #122b1c;
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-            animation: aparecer 0.5s ease-out;
-        }
-        @keyframes aparecer {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
         }
         .regalo-titulo { font-weight: bold; font-size: 20px; color: #806000; margin-bottom: 10px; }
         .regalo-texto { font-size: 15px; line-height: 1.5; font-style: italic; }
@@ -61,11 +58,11 @@
     
     <div class="num" id="contador">0</div>
     
-    <button class="btn-main" onclick="sumarUno()">PULSAR</button>
+    <!-- Botón directo sin funciones raras que bloqueen el móvil -->
+    <button class="btn-main" id="botonClic">PULSAR</button>
     <br>
-    <button onclick="reiniciar()" style="background:none; border:none; color:#555; margin-top:15px; font-size:12px; cursor:pointer;">Reiniciar cuenta</button>
+    <button id="botonReset" style="background:none; border:none; color:#555; margin-top:15px; font-size:12px; cursor:pointer;">Reiniciar cuenta</button>
 
-    <!-- LA CARTA REGALO (Se muestra sola al llegar a 100) -->
     <div class="regalo-box" id="regalo">
         <div class="regalo-titulo">🎁 ¡Recibiste un regalo motivador!</div>
         <div class="regalo-texto">
@@ -74,46 +71,63 @@
     </div>
 
     <script>
-        window.Telegram.WebApp.expand();
-
-        // Recuperar la cuenta guardada
-        let cuentaTotal = localStorage.getItem('mi_tasbih_cuenta') ? parseInt(localStorage.getItem('mi_tasbih_cuenta')) : 0;
-        document.getElementById('contador').innerText = cuentaTotal;
-        
-        // Comprobar si ya de antes tenía 100 para mostrar el regalo
-        revisarRegalo();
-
-        function sumarUno() {
-            cuentaTotal++;
-            document.getElementById('contador').innerText = cuentaTotal;
-            localStorage.setItem('mi_tasbih_cuenta', cuentaTotal);
-            
-            revisarRegalo();
-
-            // Vibración al pulsar
-            if(window.Telegram.WebApp.HapticFeedback) {
-                window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-            }
+        // Iniciar Telegram de forma segura
+        const tg = window.Telegram.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
         }
 
-        function revisarRegalo() {
+        // Sistema de cuenta directo y ultra-seguro
+        let cuentaTotal = 0;
+        
+        // Intentar recuperar los puntos guardados si existen
+        try {
+            const guardado = localStorage.getItem('cuenta_tasbih_final');
+            if (guardado) {
+                cuentaTotal = parseInt(guardado);
+                document.getElementById('contador').innerText = cuentaTotal;
+                revisarPremio();
+            }
+        } catch(e) {}
+
+        // Escuchar el clic del botón principal de forma nativa
+        document.getElementById('botonClic').addEventListener('click', function() {
+            cuentaTotal = cuentaTotal + 1;
+            document.getElementById('contador').innerText = cuentaTotal;
+            
+            try {
+                localStorage.setItem('cuenta_tasbih_final', cuentaTotal);
+            } catch(e) {}
+            
+            revisarPremio();
+
+            // Vibración nativa de Telegram al pulsar
+            if (tg && tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('light');
+            }
+        });
+
+        // Escuchar el botón de reiniciar
+        document.getElementById('botonReset').addEventListener('click', function() {
+            if (confirm("¿Quieres poner tu contador a 0?")) {
+                cuentaTotal = 0;
+                document.getElementById('contador').innerText = cuentaTotal;
+                try {
+                    localStorage.setItem('cuenta_tasbih_final', cuentaTotal);
+                } catch(e) {}
+                revisarPremio();
+            }
+        });
+
+        function revisarPremio() {
             if (cuentaTotal >= 100) {
                 document.getElementById('regalo').style.display = 'block';
-                // Vibración fuerte especial al desbloquear el premio
-                if(window.Telegram.WebApp.HapticFeedback) {
-                    window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                if (tg && tg.HapticFeedback) {
+                    tg.HapticFeedback.notificationOccurred('success');
                 }
             } else {
                 document.getElementById('regalo').style.display = 'none';
-            }
-        }
-
-        function reiniciar() {
-            if(confirm("¿Quieres poner tu contador a 0 y ocultar el regalo?")) {
-                cuentaTotal = 0;
-                document.getElementById('contador').innerText = cuentaTotal;
-                localStorage.setItem('mi_tasbih_cuenta', cuentaTotal);
-                revisarRegalo();
             }
         }
     </script>
