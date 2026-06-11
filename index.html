@@ -1,34 +1,202 @@
-<!DOCTYPE html>
-<html>
+he  <!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tasbih</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Tasbih Pro</title>
+    <script src="https://telegram.org"></script>
     <style>
-        body { background: #0f2015; color: #fff; font-family: sans-serif; text-align: center; padding: 20px; }
-        h1 { color: #d4af37; margin-bottom: 5px; }
-        .num { font-size: 70px; font-weight: bold; margin: 30px 0; color: #fff; }
-        .btn { width: 200px; height: 200px; border-radius: 50%; background: #163020; border: 5px solid #d4af37; color: #fff; font-size: 24px; font-weight: bold; cursor: pointer; }
-        .btn:active { transform: scale(0.95); }
+        :root {
+            --bg: #0b1a11;
+            --card: #122b1c;
+            --gold: #d4af37;
+            --pink: #ffb7c5; /* Rosa suave solicitado */
+            --text: #ffffff;
+        }
+        body { 
+            background: var(--bg); 
+            color: var(--text); 
+            font-family: 'Segoe UI', sans-serif; 
+            text-align: center; 
+            padding: 15px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { color: var(--gold); margin: 10px 0 5px 0; font-size: 24px; }
+        .arabic { font-size: 26px; color: var(--pink); margin-bottom: 15px; font-weight: bold; }
+        
+        /* Panel de Estadísticas Fijas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 340px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--card);
+            border: 1px solid var(--gold);
+            border-radius: 12px;
+            padding: 8px;
+        }
+        .stat-title { font-size: 11px; color: var(--pink); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-val { font-size: 18px; font-weight: bold; margin-top: 5px; color: var(--text); }
+
+        /* Marcador e Historial */
+        .num { font-size: 65px; font-weight: bold; margin: 15px 0; color: var(--text); text-shadow: 0 0 10px rgba(212,175,55,0.3); }
+        
+        /* Botón de Clic Principal */
+        .btn-main { 
+            width: 180px; 
+            height: 180px; 
+            border-radius: 50%; 
+            background: radial-gradient(circle, #1a3d27 0%, #122b1c 100%); 
+            border: 6px solid var(--gold); 
+            color: var(--text); 
+            font-size: 22px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            transition: transform 0.05s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn-main:active { transform: scale(0.95); border-color: var(--pink); }
+        
+        /* Sección de Reto Grupal */
+        .group-section {
+            margin-top: 25px;
+            background: var(--card);
+            border: 1px dashed var(--pink);
+            border-radius: 15px;
+            padding: 15px;
+            width: 85%;
+            max-width: 320px;
+        }
+        .group-title { color: var(--gold); font-size: 15px; font-weight: bold; margin: 0 0 5px 0; }
+        .group-desc { font-size: 12px; color: #b3c6bb; margin: 0 0 12px 0; line-height: 1.4; }
+        .btn-share {
+            background: var(--gold);
+            color: var(--bg);
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 20px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn-share:active { background: var(--pink); }
     </style>
 </head>
 <body>
+
     <h1>Tasbih de Istighfar</h1>
-    <div style="font-size:24px;">أَسْتَغْفِرُ اللَّهَ</div>
+    <div class="arabic">أَسْتَغْفِرُ اللَّهَ</div>
+
+    <!-- PANEL DE TIEMPOS -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-title">Total Hoy</div>
+            <div class="stat-val" id="val-hoy">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Esta Semana</div>
+            <div class="stat-val" id="val-semana">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Historial</div>
+            <div class="stat-val" id="val-total">0</div>
+        </div>
+    </div>
     
+    <!-- CONTADOR ACTUAL DE LA SESIÓN -->
     <div class="num" id="contador">0</div>
     
-    <button class="btn" onclick="contar()">PULSAR</button>
+    <button class="btn-main" onclick="contar()">PULSAR</button>
+    <button onclick="reiniciarSesion()" style="background:none; border:none; color:#666; font-size:11px; margin-top:10px; cursor:pointer;">Reiniciar sesión actual</button>
+
+    <!-- RETO GRUPAL INTERACTIVO -->
+    <div class="group-section">
+        <div class="group-title">🕌 Reto Grupal Semanal</div>
+        <div class="group-desc">Suma tus oraciones individuales y pulsa abajo para enviar tu puntuación al grupo. ¡Lleguemos juntos a la meta!</div>
+        <button class="btn-share" onclick="compartirProgreso()">📤 Aportar mis puntos al Grupo</button>
+    </div>
 
     <script>
-        window.Telegram.WebApp.expand();
-        let cuenta = 0;
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Control de fechas para resetear Hoy y Semana automáticamente
+        const fechaActual = new Date().toDateString();
+        const numSemanaActual = getWeekNumber(new Date());
+
+        // Recuperar datos guardados en el móvil
+        let cuentaSesion = 0;
+        let cuentaTotal = localStorage.getItem('t_total') ? parseInt(localStorage.getItem('t_total')) : 0;
+        
+        let ultimaFecha = localStorage.getItem('t_fecha') || fechaActual;
+        let cuentaHoy = (ultimaFecha === fechaActual) ? (localStorage.getItem('t_hoy') ? parseInt(localStorage.getItem('t_hoy')) : 0) : 0;
+
+        let ultimaSemana = localStorage.getItem('t_num_semana') ? parseInt(localStorage.getItem('t_num_semana')) : numSemanaActual;
+        let cuentaSemana = (ultimaSemana === numSemanaActual) ? (localStorage.getItem('t_semana') ? parseInt(localStorage.getItem('t_semana')) : 0) : 0;
+
+        // Guardar fechas actuales por si cambiaron
+        localStorage.setItem('t_fecha', fechaActual);
+        localStorage.setItem('t_num_semana', numSemanaActual);
+
+        // Mostrar valores iniciales
+        actualizarPantalla();
+
         function contar() {
-            cuenta++;
-            document.getElementById('contador').innerText = cuenta;
+            cuentaSesion++;
+            cuentaHoy++;
+            cuentaSemana++;
+            cuentaTotal++;
+
+            // Guardar en el almacenamiento del móvil
+            localStorage.setItem('t_hoy', cuentaHoy);
+            localStorage.setItem('t_semana', cuentaSemana);
+            localStorage.setItem('t_total', cuentaTotal);
+
+            actualizarPantalla();
+
+            // Pequeña vibración en el móvil al pulsar
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function actualizarPantalla() {
+            document.getElementById('contador').innerText = cuentaSesion;
+            document.getElementById('val-hoy').innerText = cuentaHoy;
+            document.getElementById('val-semana').innerText = cuentaSemana;
+            document.getElementById('val-total').innerText = cuentaTotal;
+        }
+
+        function reiniciarSesion() {
+            cuentaSesion = 0;
+            document.getElementById('contador').innerText = cuentaSesion;
+        }
+
+        function compartirProgreso() {
+            if (cuentaSemana === 0) {
+                alert("¡Pulsa el botón de Tasbih unas cuantas veces antes de compartir!");
+                return;
+            }
+            // Esto envía un mensaje bonito directamente al canal/grupo y cierra la app
+            const textoMensaje = `📿 ¡He aportado *${cuentaSemana}* Istighfar al Reto Semanal del Grupo! (Total acumulado: ${cuentaTotal}) 🕌`;
+            tg.sendData(textoMensaje);
+        }
+
+        // Función matemática para calcular el número de la semana actual
+        function getWeekNumber(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+            var startOfYear = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+            var weekNo = Math.ceil(( ( (d - startOfYear) / 86400000) + 1)/7);
+            return weekNo;
         }
     </script>
 </body>
 </html>
-
